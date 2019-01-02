@@ -57,7 +57,8 @@ def train(*,
             net.zero_grad()
             X = X.to(device)
             Xrec = net(X)
-            loss = ((X - Xrec)**2).mean()
+            
+            loss = ((X.view(X.size(0), -1) - Xrec.view(Xrec.size(0), -1))**2).sum(1).mean()
             loss.backward()
             opt.step()
             if niter % log_interval == 0:
