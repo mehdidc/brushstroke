@@ -18,6 +18,7 @@ def train(*,
           resume=False,
           log_interval=1,
           device='cpu',
+          nb_epochs=3000,
           nb_patches=10,
           patch_size=4,
           batch_size=64):
@@ -25,7 +26,6 @@ def train(*,
         os.makedirs(folder)
     except Exception:
         pass
-    nb_epochs = 3000
     lr = 0.001
 
     dataset = load_dataset(dataset)
