@@ -140,6 +140,7 @@ class BrushAE(nn.Module):
         self.patch_embedding = nn.Linear(
             patch_embedding_size, nb_colors * patch_size**2)
         self.pos_predictor = nn.Linear(hsize, nb_patches * 2)
+        self.scale = ScaleLayer()
         self.apply(weights_init)
 
     def forward(self, x):
@@ -162,12 +163,10 @@ class BrushAE(nn.Module):
         pos = pos.view(x.size(0), self.nb_patches, 2)
 
         out = self.brush_stroke(pos, patches)
+        out = self.scale(out)
+        out = nn.Sigmoid()(out)
         return out
 
-    def sample(self, nb_examples=1):
-        device = next(self.parameters()).device
-        z = torch.randn(nb_examples, self.latent_size).to(device)
-        return self.decode(z)
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -179,6 +178,16 @@ def weights_init(m):
     elif classname == 'Linear':
         init.xavier_uniform_(m.weight.data)
         m.bias.data.fill_(0)
+
+class ScaleLayer(nn.Module):
+
+   def __init__(self, bias=0, scale=1):
+       super().__init__()
+       self.scale = nn.Parameter(torch.FloatTensor([scale]))
+       self.bias = nn.Parameter(torch.FloatTensor([bias]))
+
+   def forward(self, input):
+       return (input * self.scale) + self.bias
 
 
 if __name__ == '__main__':
