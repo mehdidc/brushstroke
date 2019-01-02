@@ -18,6 +18,8 @@ def train(*,
           resume=False,
           log_interval=1,
           device='cpu',
+          nb_patches=10,
+          patch_size=4,
           batch_size=64):
     try:
         os.makedirs(folder)
@@ -41,8 +43,8 @@ def train(*,
         net = torch.load('{}/net.th'.format(folder))
     else:
         net = BrushAE(
-            nb_patches=10,
-            patch_size=8,
+            nb_patches=nb_patches,
+            patch_size=patch_size,
             nb_colors=nc,
             image_size=x0.size(1),
             device=device,
