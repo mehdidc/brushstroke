@@ -44,7 +44,8 @@ def train(*,
             nb_patches=10,
             patch_size=8,
             nb_colors=nc,
-            image_size=x0.size(1)
+            image_size=x0.size(1),
+            device=device,
         )
     opt = optim.Adam(net.parameters(), lr=lr, betas=(0.5, 0.999))
     net = net.to(device)

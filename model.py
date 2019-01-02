@@ -108,9 +108,9 @@ class BrushAE(nn.Module):
     def __init__(
             self,
             nb_colors=1, nb_patches=10, patch_size=4, nb_layers=1,
-            nb_discr_filters=64, image_size=64, patch_embedding_size=30):
+            nb_discr_filters=64, image_size=64, patch_embedding_size=30, device='cpu'):
         super().__init__()
-        self.brush_stroke = BrushStroke(image_size, image_size)
+        self.brush_stroke = BrushStroke(image_size, image_size, device=device)
         self.nb_patches = nb_patches
         self.patch_size = patch_size
         self.nb_colors = nb_colors
