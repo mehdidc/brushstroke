@@ -29,7 +29,7 @@ def train(*,
     lr = 0.001
 
     dataset = load_dataset(dataset)
-    dataset  = SubSample(dataset, 10)
+    dataset  = SubSample(dataset, 1)
 
     x0, _ = dataset[0]
     nc = x0.size(0)
@@ -47,6 +47,7 @@ def train(*,
             patch_size=patch_size,
             nb_colors=nc,
             image_size=x0.size(1),
+            nb_layers=1,
             device=device,
         )
     opt = optim.Adam(net.parameters(), lr=lr, betas=(0.5, 0.999))
@@ -57,8 +58,9 @@ def train(*,
             net.zero_grad()
             X = X.to(device)
             Xrec = net(X)
-            
-            loss = ((X.view(X.size(0), -1) - Xrec.view(Xrec.size(0), -1))**2).sum(1).mean()
+            xt = X.view(X.size(0), -1)
+            xr = Xrec.view(Xrec.size(0), -1)
+            loss = ((xr - xt)**2).sum(1).mean()
             loss.backward()
             opt.step()
             if niter % log_interval == 0:

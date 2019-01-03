@@ -4,18 +4,20 @@ import torch.nn as nn
 from torch.nn import init
 
 
-def norm(x, eps=1e-7):
-    minvals, _ = x.min(dim=1, keepdim=True)
-    maxvals, _ = x.max(dim=1, keepdim=True)
+def norm(x, eps=1e-7, dim=1):
+    minvals, _ = x.min(dim=dim, keepdim=True)
+    maxvals, _ = x.max(dim=dim, keepdim=True)
     return (x - minvals) / (maxvals - minvals + eps)
 
 
 class BrushStroke(nn.Module):
 
-    def __init__(self, image_w, image_h, pad='half_patch', eps=1e-7, device='cpu'):
+    def __init__(self, image_w, image_h, pad='half_patch', eps=1e-7, x_sigma=0.1, y_sigma=0.1, device='cpu'):
         super().__init__()
         self.image_w = image_w
         self.image_h = image_h
+        self.x_sigma = x_sigma
+        self.y_sigma = y_sigma
         self.pad = pad
         self.eps = eps
         self.device = device
@@ -25,8 +27,8 @@ class BrushStroke(nn.Module):
         gx = brushes[:, :, 0]
         gy = brushes[:, :, 1]
 
-        gx = norm(gx) * self.image_w
-        gy = norm(gy) * self.image_h
+        gx = gx * self.image_w
+        gy = gy * self.image_h
 
         w = self.image_w
         h = self.image_h
@@ -43,24 +45,22 @@ class BrushStroke(nn.Module):
 
         widths = torch.arange(1, pw + 1).float().to(device)
         heights = torch.arange(1, ph + 1).float().to(device)
-        sx = 1
+        sx = 1 
         sy = 1
         ux = gx.view(gx.size(0), gx.size(1), 1) + \
             ((widths - pw/2 - 0.5) * sx).view(1, 1, -1)
         uy = gy.view(gy.size(0), gy.size(1), 1) + \
-            ((heights - pw/2 - 0.4) * sy).view(1, 1, -1)
-        x_sigma = 0.1
-        y_sigma = 0.1
+            ((heights - pw/2 - 0.5) * sy).view(1, 1, -1)
 
         a_ = a.view(1, 1, a.size(0), a.size(1))
         ux_ = ux.view(ux.size(0), ux.size(1), 1, ux.size(2))
-        Fx = torch.exp(-(a_ - ux_) ** 2 / (2 * x_sigma ** 2))
+        Fx = torch.exp(-(a_ - ux_) ** 2 / (2 * self.x_sigma ** 2))
         Fx = Fx / (Fx.sum(dim=2, keepdim=True) + self.eps)
         Fx = Fx[:, :, pad:-pad]
 
         b_ = b.view(1, 1, b.size(0), b.size(1))
         uy_ = uy.view(uy.size(0), uy.size(1), 1, uy.size(2))
-        Fy = torch.exp(-(b_ - uy_) ** 2 / (2 * y_sigma ** 2))
+        Fy = torch.exp(-(b_ - uy_) ** 2 / (2 * self.y_sigma ** 2))
         Fy = Fy / (Fy.sum(dim=2, keepdim=True) + self.eps)
         Fy = Fy[:, :, pad:-pad]
         p = patches.view(
@@ -100,6 +100,7 @@ class BrushStroke(nn.Module):
         out = (out * Fy).sum(dim=4)
         out = out.mean(dim=1)
         out = out.transpose(2, 3)
+        out = out.contiguous()
         return out
 
 
@@ -120,17 +121,15 @@ class BrushAE(nn.Module):
         ndf = self.nb_discr_filters
         nf = ndf
         layers = [
-            nn.Conv2d(nb_colors, nf, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nf),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(nb_colors, nf, 4, 2, 1, bias=True),
+            nn.ReLU(True),
         ]
         for i in range(nb_layers - 1):
             layers.extend([
-                nn.Conv2d(nf, nf * 2, 4, 2, 1, bias=False),
-                nn.BatchNorm2d(nf * 2),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.Conv2d(nf, nf * 2, 4, 2, 1, bias=True),
+                nn.ReLU(True),
             ])
-            if i < nb_layers - 2:
+            if i < nb_layers - 1:
                 nf *= 2
         self.encoder = nn.Sequential(*layers)
 
@@ -151,7 +150,8 @@ class BrushAE(nn.Module):
                                self.patch_embedding_size)
         patches = patches.view(x.size(0) * self.nb_patches, -1)
         patches = self.patch_embedding(patches)
-        patches = norm(patches)
+        patches = nn.Sigmoid()(patches)
+
         patches = patches.view(
             x.size(0),
             self.nb_patches,
@@ -161,10 +161,8 @@ class BrushAE(nn.Module):
         )
         pos = self.pos_predictor(h)
         pos = pos.view(x.size(0), self.nb_patches, 2)
-
+        pos = nn.Sigmoid()(pos)
         out = self.brush_stroke(pos, patches)
-        out = self.scale(out)
-        out = nn.Sigmoid()(out)
         return out
 
 
