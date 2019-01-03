@@ -10,12 +10,6 @@ import torchvision.transforms as transforms
 from utils import Invert
 from utils import Gray
 
-
-DATA_PATH = 'data'
-def data_path(folder):
-    return os.path.join(DATA_PATH, folder)
-
-
 class SubSample:
 
     def __init__(self, dataset, nb):
@@ -33,7 +27,7 @@ class SubSample:
 def load_dataset(dataset_name, split='full', image_size=32):
     if dataset_name == 'mnist':
         dataset = dset.MNIST(
-            root=data_path('mnist'), 
+            root='mnist', 
             download=True,
             transform=transforms.Compose([
                 transforms.Scale(image_size),
@@ -42,7 +36,7 @@ def load_dataset(dataset_name, split='full', image_size=32):
         )
         return dataset
     else:
-        dataset = dset.ImageFolder(root=data_path(dataset_name),
+        dataset = dset.ImageFolder(root=dataset_name,
             transform=transforms.Compose([
             transforms.Scale(image_size),
             transforms.CenterCrop(image_size),
