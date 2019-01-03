@@ -21,6 +21,7 @@ def train(*,
           nb_epochs=3000,
           nb_patches=10,
           patch_size=4,
+          image_size=32,
           nb=None,
           batch_size=64):
     try:
@@ -28,7 +29,7 @@ def train(*,
     except Exception:
         pass
     lr = 0.001
-    dataset = load_dataset(dataset)
+    dataset = load_dataset(dataset, image_size=size)
     if nb:
         nb = int(nb)
         dataset  = SubSample(dataset, nb)
