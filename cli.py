@@ -29,7 +29,7 @@ def train(*,
     lr = 0.001
 
     dataset = load_dataset(dataset)
-    dataset  = SubSample(dataset, 1)
+    dataset  = SubSample(dataset, 100)
 
     x0, _ = dataset[0]
     nc = x0.size(0)
