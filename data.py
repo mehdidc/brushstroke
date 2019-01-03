@@ -43,31 +43,3 @@ def load_dataset(dataset_name, split='full', image_size=32):
             transforms.ToTensor(),
         ]))
         return dataset
-
-def _load_npy(filename):
-    data = np.load(filename)
-    X = torch.from_numpy(data['X']).float()
-    if 'y' in data:
-        y  = torch.from_numpy(data['y'])
-    else:
-        y = torch.zeros(len(X))
-    X /= X.max()
-    X = X * 2 - 1
-    print(X.min(), X.max())
-    dataset = dset.TensorDataset(
-        inputs=X, 
-        targets=y,
-    )
-    return dataset
-
-
-def _load_h5(filename):
-    import h5py
-    data = h5py.File(filename, 'r')
-    X = data['X']
-    if 'y' in data:
-        y  = (data['y'])
-    else:
-        y = np.zeros(len(X))
-    dataset = H5Dataset(X, y, transform=lambda u:2*(u.float()/255.)-1)
-    return dataset

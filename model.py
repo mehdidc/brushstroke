@@ -48,15 +48,11 @@ class BrushStroke(nn.Module):
         widths = torch.arange(1, pw + 1).float().to(device)
         heights = torch.arange(1, ph + 1).float().to(device)
         
-        #a /= w+pad*2
-        #b /= h+pad*2
-        #widths /= pw
-        #heights /= ph
         gx = gx * self.image_w
         gy = gy * self.image_h
-        
         sx = 1 
         sy = 1
+        
         ux = gx.view(gx.size(0), gx.size(1), 1) + \
             ((widths - (pw/2) - 0.5) * sx).view(1, 1, -1)
         uy = gy.view(gy.size(0), gy.size(1), 1) + \
