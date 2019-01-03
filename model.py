@@ -12,12 +12,11 @@ def norm(x, eps=1e-7, dim=1):
 
 class BrushStroke(nn.Module):
 
-    def __init__(self, image_w, image_h, pad='half_patch', eps=1e-7, x_sigma=0.1, y_sigma=0.1, device='cpu'):
+    def __init__(self, image_w, image_h, pad='half_patch', eps=1e-7, sigma=0.2, device='cpu'):
         super().__init__()
         self.image_w = image_w
         self.image_h = image_h
-        self.x_sigma = x_sigma
-        self.y_sigma = y_sigma
+        self.sigma= sigma
         self.pad = pad
         self.eps = eps
         self.device = device
@@ -26,10 +25,12 @@ class BrushStroke(nn.Module):
         device = self.device
         gx = brushes[:, :, 0]
         gy = brushes[:, :, 1]
-
-        gx = gx * self.image_w
-        gy = gy * self.image_h
-
+        if self.sigma == 'predict':
+            xsig = brushes[:, :, 2] * 5
+            ysig = brushes[:, :, 3] * 5 
+        else:
+            xsig = torch.ones_like(gx) * self.sigma
+            ysig = torch.ones_like(gy) * self.sigma
         w = self.image_w
         h = self.image_h
         ph = patches.size(3)
@@ -40,27 +41,41 @@ class BrushStroke(nn.Module):
             pad = self.pad
         a, _ = np.indices((w + pad * 2, pw)) - pad
         a = torch.from_numpy(a).float().to(device)
+
         b, _ = np.indices((h + pad * 2, ph)) - pad
         b = torch.from_numpy(b).float().to(device)
 
         widths = torch.arange(1, pw + 1).float().to(device)
         heights = torch.arange(1, ph + 1).float().to(device)
+        
+        #a /= w+pad*2
+        #b /= h+pad*2
+        #widths /= pw
+        #heights /= ph
+        gx = gx * self.image_w
+        gy = gy * self.image_h
+        
         sx = 1 
         sy = 1
         ux = gx.view(gx.size(0), gx.size(1), 1) + \
-            ((widths - pw/2 - 0.5) * sx).view(1, 1, -1)
+            ((widths - (pw/2) - 0.5) * sx).view(1, 1, -1)
         uy = gy.view(gy.size(0), gy.size(1), 1) + \
-            ((heights - pw/2 - 0.5) * sy).view(1, 1, -1)
+            ((heights - (ph/2) - 0.5) * sy).view(1, 1, -1)
 
         a_ = a.view(1, 1, a.size(0), a.size(1))
         ux_ = ux.view(ux.size(0), ux.size(1), 1, ux.size(2))
-        Fx = torch.exp(-(a_ - ux_) ** 2 / (2 * self.x_sigma ** 2))
+        xsig_ = xsig.view(xsig.size(0), xsig.size(1), 1, 1)
+        Fx = torch.exp(-(a_ - ux_) ** 2 / (2 * xsig_ ** 2))
+        
         Fx = Fx / (Fx.sum(dim=2, keepdim=True) + self.eps)
         Fx = Fx[:, :, pad:-pad]
 
         b_ = b.view(1, 1, b.size(0), b.size(1))
         uy_ = uy.view(uy.size(0), uy.size(1), 1, uy.size(2))
-        Fy = torch.exp(-(b_ - uy_) ** 2 / (2 * self.y_sigma ** 2))
+        
+        ysig_ = ysig.view(ysig.size(0), ysig.size(1), 1, 1)
+        Fy = torch.exp(-(b_ - uy_) ** 2 / (2 * ysig_ ** 2))
+        
         Fy = Fy / (Fy.sum(dim=2, keepdim=True) + self.eps)
         Fy = Fy[:, :, pad:-pad]
         p = patches.view(
@@ -138,7 +153,7 @@ class BrushAE(nn.Module):
             hsize, nb_patches * patch_embedding_size)
         self.patch_embedding = nn.Linear(
             patch_embedding_size, nb_colors * patch_size**2)
-        self.pos_predictor = nn.Linear(hsize, nb_patches * 2)
+        self.pos_predictor = nn.Linear(hsize, nb_patches * 4)
         self.scale = ScaleLayer()
         self.apply(weights_init)
 
@@ -159,9 +174,11 @@ class BrushAE(nn.Module):
             self.patch_size,
             self.patch_size,
         )
+        patches_constant = torch.ones_like(patches)
         pos = self.pos_predictor(h)
-        pos = pos.view(x.size(0), self.nb_patches, 2)
-        pos = nn.Sigmoid()(pos)
+        pos = pos.view(x.size(0), self.nb_patches, 4)
+        #pos = nn.Sigmoid()(pos)
+        pos = norm(pos)
         out = self.brush_stroke(pos, patches)
         return out
 
@@ -189,7 +206,20 @@ class ScaleLayer(nn.Module):
 
 
 if __name__ == '__main__':
-    x = torch.randn(1, 1, 32, 32)
-    ae = BrushAE(nb_patches=20, nb_colors=1, patch_size=4, image_size=32)
-    y = ae(x)
-    print(y.min(), y.max())
+    from skimage.io import imsave
+    brush = BrushStroke(32, 32)
+    pos = torch.ones(1, 1, 2)
+    pos[:, :, 0] = 0.5
+    pos[:, :, 1] = 0.5
+    patches = torch.ones(1, 1, 1, 8, 8)
+    x = brush(pos, patches)
+    x = 1 - x
+    im = x[0, 0]
+    imsave('out.png', im)
+    x = torch.randn(10, 1, 32, 32)
+    ae = BrushAE(nb_patches=100, nb_colors=1, patch_size=4, image_size=32)
+    y = ae(x).detach().numpy()
+    y/=y.max()
+    y = 1 - y
+    im = y[0, 0]
+    imsave('out2.png', im)

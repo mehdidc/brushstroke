@@ -27,9 +27,8 @@ def train(*,
     except Exception:
         pass
     lr = 0.001
-
     dataset = load_dataset(dataset)
-    dataset  = SubSample(dataset, 100)
+    dataset  = SubSample(dataset, 1)
 
     x0, _ = dataset[0]
     nc = x0.size(0)
@@ -50,7 +49,8 @@ def train(*,
             nb_layers=1,
             device=device,
         )
-    opt = optim.Adam(net.parameters(), lr=lr, betas=(0.5, 0.999))
+    opt = optim.Adam(net.parameters(), lr=lr)
+    #opt = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
     net = net.to(device)
     niter = 0
     for epoch in range(nb_epochs):
