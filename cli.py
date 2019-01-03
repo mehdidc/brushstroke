@@ -29,7 +29,7 @@ def train(*,
     except Exception:
         pass
     lr = 0.001
-    dataset = load_dataset(dataset, image_size=size)
+    dataset = load_dataset(dataset, image_size=image_size)
     if nb:
         nb = int(nb)
         dataset  = SubSample(dataset, nb)
