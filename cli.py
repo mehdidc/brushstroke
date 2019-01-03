@@ -21,6 +21,7 @@ def train(*,
           nb_epochs=3000,
           nb_patches=10,
           patch_size=4,
+          nb=None,
           batch_size=64):
     try:
         os.makedirs(folder)
@@ -28,8 +29,9 @@ def train(*,
         pass
     lr = 0.001
     dataset = load_dataset(dataset)
-    dataset  = SubSample(dataset, 1)
-
+    if nb:
+        nb = int(nb)
+        dataset  = SubSample(dataset, nb)
     x0, _ = dataset[0]
     nc = x0.size(0)
     dataloader = torch.utils.data.DataLoader(
