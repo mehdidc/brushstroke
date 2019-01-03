@@ -53,7 +53,6 @@ def train(*,
             device=device,
         )
     opt = optim.Adam(net.parameters(), lr=lr)
-    #opt = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
     net = net.to(device)
     niter = 0
     for epoch in range(nb_epochs):
