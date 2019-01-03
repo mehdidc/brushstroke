@@ -149,10 +149,15 @@ class BrushAE(nn.Module):
         self.encoder = nn.Sequential(*layers)
 
         hsize = nf * (image_size // (2 ** nb_layers))**2
-        self.patch_predictor = nn.Linear(
-            hsize, nb_patches * patch_embedding_size)
+        self.patch_predictor =nn.Sequential(
+            nn.Linear(hsize, 512),
+            nn.ReLU(True),
+            nn.Linear(512, n b_patches * patch_embedding_size)
+        )
         self.patch_embedding = nn.Linear(
-            patch_embedding_size, nb_colors * patch_size**2)
+            patch_embedding_size, 
+            nb_colors * patch_size**2
+        )
         self.pos_predictor = nn.Linear(hsize, nb_patches * 4)
         self.scale = ScaleLayer()
         self.apply(weights_init)
