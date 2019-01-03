@@ -189,8 +189,8 @@ class BrushAE(nn.Module):
     def forward(self, x):
         pos, patches = self.encode(x)
         out = self.brush_stroke(pos, patches)
-        out = self.scale(out)
-        out = nn.Sigmoid()(out)
+        #out = self.scale(out)
+        #out = nn.Sigmoid()(out)
         return out
 
 
