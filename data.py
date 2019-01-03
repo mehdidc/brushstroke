@@ -5,11 +5,6 @@ import torch
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
-#from torchsample.datasets import TensorDataset
-
-from utils import Invert
-from utils import Gray
-
 class SubSample:
 
     def __init__(self, dataset, nb):
