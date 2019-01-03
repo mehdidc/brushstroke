@@ -187,6 +187,8 @@ class BrushAE(nn.Module):
         #pos = nn.Sigmoid()(pos)
         pos = norm(pos)
         out = self.brush_stroke(pos, patches)
+        out = self.scale(out)
+        out = nn.Sigmoid()(out)
         return out
 
 
