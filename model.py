@@ -152,7 +152,7 @@ class BrushAE(nn.Module):
         self.patch_predictor =nn.Sequential(
             nn.Linear(hsize, 512),
             nn.ReLU(True),
-            nn.Linear(512, n b_patches * patch_embedding_size)
+            nn.Linear(512, nb_patches * patch_embedding_size)
         )
         self.patch_embedding = nn.Linear(
             patch_embedding_size, 
