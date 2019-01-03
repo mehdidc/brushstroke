@@ -124,7 +124,8 @@ class BrushAE(nn.Module):
     def __init__(
             self,
             nb_colors=1, nb_patches=10, patch_size=4, nb_layers=1,
-            nb_discr_filters=64, image_size=64, patch_embedding_size=30, device='cpu'):
+            nb_discr_filters=64, image_size=64, patch_embedding_size=30, 
+            device='cpu'):
         super().__init__()
         self.brush_stroke = BrushStroke(image_size, image_size, device=device)
         self.nb_patches = nb_patches
@@ -164,7 +165,7 @@ class BrushAE(nn.Module):
         self.scale = ScaleLayer()
         self.apply(weights_init)
 
-    def forward(self, x):
+    def encode(self, x):
         h = self.encoder(x)
         h = h.view(h.size(0), -1)
         patches = self.patch_predictor(h)
@@ -173,7 +174,6 @@ class BrushAE(nn.Module):
         patches = patches.view(x.size(0) * self.nb_patches, -1)
         patches = self.patch_embedding(patches)
         patches = nn.Sigmoid()(patches)
-
         patches = patches.view(
             x.size(0),
             self.nb_patches,
@@ -181,11 +181,13 @@ class BrushAE(nn.Module):
             self.patch_size,
             self.patch_size,
         )
-        patches_constant = torch.ones_like(patches)
         pos = self.pos_predictor(h)
         pos = pos.view(x.size(0), self.nb_patches, 4)
-        #pos = nn.Sigmoid()(pos)
         pos = norm(pos)
+        return pos, patches
+
+    def forward(self, x):
+        pos, patches = self.encode(x)
         out = self.brush_stroke(pos, patches)
         out = self.scale(out)
         out = nn.Sigmoid()(out)
