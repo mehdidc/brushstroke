@@ -9,7 +9,7 @@ import torch.optim as optim
 from model import BrushAE
 from data import SubSample
 from viz import grid_of_images_default
-from data import load_dataset, PatchDataset
+from data import load_dataset
 
 
 def train(*,
