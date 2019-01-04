@@ -35,8 +35,8 @@ def load_dataset(dataset_name, split='full', image_size=32, crop_size=None):
             crop_size = image_size
         dataset = dset.ImageFolder(root=dataset_name,
             transform=transforms.Compose([
-            transforms.Scale(crop_size),
             transforms.CenterCrop(image_size),
+            transforms.Scale((image_size, image_size)),
             transforms.ToTensor(),
         ]))
         return dataset
