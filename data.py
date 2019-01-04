@@ -19,7 +19,7 @@ class SubSample:
     def __len__(self):
         return self.nb
 
-def load_dataset(dataset_name, split='full', image_size=32):
+def load_dataset(dataset_name, split='full', image_size=32, crop_size=None):
     if dataset_name == 'mnist':
         dataset = dset.MNIST(
             root='mnist', 
@@ -31,9 +31,11 @@ def load_dataset(dataset_name, split='full', image_size=32):
         )
         return dataset
     else:
+        if not crop_size:
+            crop_size = image_size
         dataset = dset.ImageFolder(root=dataset_name,
             transform=transforms.Compose([
-            transforms.Scale(image_size),
+            transforms.Scale(crop_size),
             transforms.CenterCrop(image_size),
             transforms.ToTensor(),
         ]))
