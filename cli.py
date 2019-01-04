@@ -13,6 +13,7 @@ from data import load_dataset
 
 
 def train(*,
+          lr=0.001,
           folder='out',
           dataset='mnist',
           resume=False,
@@ -29,7 +30,6 @@ def train(*,
         os.makedirs(folder)
     except Exception:
         pass
-    lr = 0.001
     if crop_size:
         crop_size = int(crop_size)
     dataset = load_dataset(dataset, image_size=image_size, crop_size=crop_size)
