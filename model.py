@@ -181,7 +181,7 @@ class BrushAE(nn.Module):
 
         pos2 = self.pos_predictor_layer2(patches_layer2)
         pos2 = pos2.view(B, self.nb_patches, self.nb_patches, 5)
-        pos = norm(pos1, dim=3) + norm(pos2, dim=3)
+        pos =  norm(pos1 + pos2, dim=3)
         pos = pos.view(B, self.nb_patches * self.nb_patches, 5)
         return pos, patches
 
